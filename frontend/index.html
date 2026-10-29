@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ledgerly · Ecommerce Operations</title>
+<link rel="stylesheet" href="style.css"></head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<!-- SIDEBAR: logo, menu (menu links are built by script.js), safety note -->
+<aside class="side" id="side">
+  <div class="brand"><span class="mark">L</span><div><b>Ledgerly</b><small>OPERATIONS INTELLIGENCE</small></div></div>
+  <p class="label">WORKSPACE</p>
+  <nav aria-label="Primary" id="nav"></nav>
+  <label class="label" for="whoami">REVIEWING AS</label>
+  <input id="whoami" class="who" placeholder="Your name">
+  <button id="theme" class="btn" type="button">◐ Switch theme</button>
+  <div class="sidecard"><b>Protected workspace</b><p>Reading and recommending are separate from executing. Approvals here change review status only.</p></div>
+</aside>
+
+<div class="shell">
+  <!-- TOP BAR: breadcrumb, page title, backend status -->
+  <header class="top">
+    <button id="menu" class="icon" aria-label="Toggle navigation">☰</button>
+    <div class="titles"><div class="crumb">Workspace / <span id="crumb">Overview</span></div><h1 id="title">Overview</h1></div>
+    <span id="conn" class="pill">Checking backend…</span>
+  </header>
+
+  <main id="main" tabindex="-1">
+
+    <!-- OVERVIEW -->
+    <section data-view="overview">
+      <div class="hero"><div><h2>Good to see you.</h2><p>Ask in plain language, or review what the assistant has proposed.</p></div>
+        <a class="btn primary" href="#assistant">Open AI Assistant</a></div>
+      <div class="grid3" id="counts"></div>
+      <div class="card"><h3>Latest pending approvals</h3><div id="ovPending"></div></div>
+      <div class="grid2">
+        <div class="card unavail"><h3>Sales &amp; stock-risk summaries</h3><p>Unavailable: the backend has no summary endpoint. Ask the assistant instead.</p><a href="#inventory">Go to Inventory tools →</a></div>
+        <div class="card unavail"><h3>Recent tool executions &amp; audit activity</h3><p>Unavailable: logs are saved but no read endpoint exists. See <a href="#audit">Audit Logs</a>.</p></div>
+      </div>
+    </section>
+
+    <!-- AI ASSISTANT -->
+    <section data-view="assistant" hidden>
+      <div class="chatwrap">
+        <div class="chat">
+          <div class="chathead"><span class="mark sm">✳</span><div><b>Ledgerly Assistant</b><small>Read-only chat · proposals need approval</small></div></div>
+          <div id="log" class="log" aria-live="polite"></div>
+          <div class="composer">
+            <label for="q" class="sr">Your question</label>
+            <textarea id="q" rows="2" placeholder="Ask a question about your store…"></textarea>
+            <button id="send" class="btn primary">Send</button>
+          </div>
+        </div>
+        <div class="rail">
+          <aside class="card"><h3>Ask better questions</h3>
+            <div class="period"><label>From <input type="date" id="d1"></label><label>To <input type="date" id="d2"></label></div>
+            <p class="muted">Date questions use this period. Pick dates that exist in your data.</p>
+            <div id="sugg" class="sugg"></div></aside>
+          <aside class="card"><h3>Request trace</h3>
+            <div id="trace"><p class="muted">Send a question to see its timing and status.</p></div></aside>
+          <aside class="card"><h3>Pending review <span id="inboxN" class="tag"></span></h3>
+            <div id="inbox"></div>
+            <p class="muted">Approve or reject records a decision only. Nothing is executed.</p></aside>
+          <aside class="card"><h3>Recent questions</h3>
+            <div id="recent"><p class="muted">None yet.</p></div></aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRODUCTS / INVENTORY / ORDERS: forms are built by script.js -->
+    <section data-view="products" hidden><p class="lead">No product endpoint exists, so these forms ask the assistant, which calls your read-only tools.</p><div id="l-products" class="grid2"></div></section>
+    <section data-view="inventory" hidden><p class="lead">Inventory is reachable only through the assistant. Proposals fill the chat box for review and are never sent automatically.</p><div id="l-inventory" class="grid2"></div></section>
+    <section data-view="orders" hidden><p class="lead">Order, customer and refund data are reachable only through the assistant.</p><div id="l-orders" class="grid2"></div></section>
+
+    <!-- APPROVALS -->
+    <section data-view="approvals" hidden>
+      <div class="banner">Approving or rejecting records a review decision only. <b>No business action is executed.</b></div>
+      <div class="tabs" role="tablist" id="tabs"></div>
+      <div id="aplist" class="card"></div>
+    </section>
+
+    <!-- AUDIT LOGS -->
+    <section data-view="audit" hidden>
+      <div class="card unavail"><h3>Not available yet</h3>
+        <p>The backend saves <code>audit_logs</code> and <code>tool_runs</code> but has no endpoint to read them, and the browser must not open SQLite directly.</p>
+        <p><b>Smallest addition:</b> two read-only routes, <code>GET /audit-logs</code> and <code>GET /tool-runs</code>.</p></div>
+    </section>
+  </main>
+</div>
+
+<dialog id="dlg"></dialog>
+<div id="toast" role="status"></div>
+<script src="script.js"></script>
+</body></html>
