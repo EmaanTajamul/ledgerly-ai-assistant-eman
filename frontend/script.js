@@ -13,7 +13,16 @@ const PAGES = { overview: "Overview", assistant: "AI Assistant", products: "Prod
                 inventory: "Inventory", orders: "Orders", approvals: "Approvals", audit: "Audit Logs" };
 
 // Little symbols shown next to each sidebar item.
-const ICONS = { overview: "▦", assistant: "✳", products: "◇", inventory: "▤", orders: "☰", approvals: "◉", audit: "≡" };
+const svg = d => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
+const ICONS = {
+  overview: svg('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
+  assistant: svg('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16v4M17 18h4"/>'),
+  products: svg('<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5M12 13v8"/>'),
+  inventory: svg('<rect x="3" y="4" width="18" height="5" rx="1.5"/><rect x="3" y="11" width="18" height="5" rx="1.5"/><path d="M3 19h18"/>'),
+  orders: svg('<circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11l2-8H6"/>'),
+  approvals: svg('<circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/>'),
+  audit: svg('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>'),
+};
 
 /* ---------- 2. HELPERS ---------- */
 const $ = selector => document.querySelector(selector);   // short for getElementById-style lookups
@@ -125,13 +134,19 @@ function addMessage(kind, html) {
 // Turns the AI's markdown-style text into SAFE html (tables, headings, lists, bold).
 function formatAnswer(text) {
   const lines = esc(text).split("\n");            // escape FIRST so nothing can inject HTML
-  let html = "", openList = "", inTable = false, firstRow = true;
+  let html = "", openList = "", inTable = false, firstRow = true, inCode = false, codeBuf = [];
   const inline = t => t.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`(.+?)`/g, "<code>$1</code>");
   function closeBlocks() {
     if (openList) { html += "</" + openList + ">"; openList = ""; }
     if (inTable) { html += "</table>"; inTable = false; }
   }
   for (const line of lines) {
+    if (/^\s*```/.test(line)) {                     // fenced code block (already escaped, so safe)
+      if (inCode) { html += "<pre><code>" + codeBuf.join("\n") + "</code></pre>"; inCode = false; codeBuf = []; }
+      else { closeBlocks(); inCode = true; }
+      continue;
+    }
+    if (inCode) { codeBuf.push(line); continue; }
     let m;
     if (/^\s*-{3,}\s*$/.test(line)) { closeBlocks(); html += "<hr>"; }
     else if ((m = line.match(/^\s*#{1,6}\s+(.*)/))) { closeBlocks(); html += "<h4>" + inline(m[1]) + "</h4>"; }
@@ -145,6 +160,7 @@ function formatAnswer(text) {
     else if ((m = line.match(/^\s*\d+[.)]\s+(.*)/))) { if (openList !== "ol") { closeBlocks(); html += "<ol>"; openList = "ol"; } html += "<li>" + inline(m[1]) + "</li>"; }
     else { closeBlocks(); if (line.trim()) html += "<p>" + inline(line) + "</p>"; }
   }
+  if (inCode) html += "<pre><code>" + codeBuf.join("\n") + "</code></pre>";
   closeBlocks();
   return html;
 }
@@ -185,7 +201,12 @@ sendButton.onclick = () => askAssistant(input.value);
 input.addEventListener("keydown", event => {        // Enter sends, Shift+Enter = new line
   if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); askAssistant(input.value); }
 });
-log.innerHTML = `<div class="empty"><h2>What would you like to know?</h2><p>Ask about products, stock, orders, sales or refunds.<br>Proposals are never applied from chat.</p></div>`;
+log.innerHTML = `<div class="empty"><span class="mark lg">${ICONS.assistant}</span><h2>What would you like to know?</h2><p>Ask about products, stock, orders, sales or refunds.<br>Proposals are never applied from chat.</p>
+  <div class="chips">${[[0, "Top-selling products"], [1, "Low stock"], [2, "Recent sales"], [4, "Refund activity"]].map(([i, t]) => `<button class="chip" data-i="${i}">${t}</button>`).join("")}</div></div>`;
+log.onclick = e => {                                 // empty-state chips reuse the sidebar suggestion buttons
+  const chip = e.target.closest(".chip");
+  if (chip) $("#sugg").querySelector(`[data-i="${chip.dataset.i}"]`).click();
+};
 
 /* ---------- 5. TOOL FORMS (Products / Inventory / Orders) ---------- */
 // The backend has NO product/order endpoints. These forms only write a question
